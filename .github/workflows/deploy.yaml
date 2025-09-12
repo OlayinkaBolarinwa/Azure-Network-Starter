@@ -11,21 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
+      # 1️⃣ Checkout code with submodules
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: true 
 
       # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.5 
+          terraform_version: 1.7.5  
 
-      # 3️⃣ Login to Azure
+      # 3️⃣ Azure Login using Service Principal
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }} 
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # 4️⃣ Terraform Init
       - name: Terraform Init
@@ -33,14 +35,12 @@ jobs:
 
       # 5️⃣ Terraform Plan
       - name: Terraform Plan
-        id: plan
         run: |
           terraform -chdir=env/production plan -out=tfplan \
             -var "admin_username=azureuser" \
             -var "location=UK South" \
-            -var "name_prefix=azure-test"
+            -var "name_prefix=azure-network"
 
-      # 6️⃣ Terraform Apply 
+      # 6️⃣ Terraform Apply
       - name: Terraform Apply
-        if: success()
         run: terraform -chdir=env/production apply -auto-approve tfplan
