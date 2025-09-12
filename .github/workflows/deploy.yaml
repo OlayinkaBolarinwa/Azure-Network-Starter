@@ -33,7 +33,11 @@ jobs:
 
       # 5️⃣ Terraform Plan
       - name: Terraform Plan
-        run: terraform -chdir=env/production plan -out=tfplan -var "admin_username=azureuser" -var "location=UK South"
+        run: |
+          terraform -chdir=env/production plan -out=tfplan \
+            -var "admin_username=azureuser" \
+            -var "location=UK South" \
+            -var "name_prefix=azure-test"
 
       # 6️⃣ Terraform Apply
       - name: Terraform Apply
