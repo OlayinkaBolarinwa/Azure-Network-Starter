@@ -19,7 +19,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.5  # or your desired version
+          terraform_version: 1.7.5 
 
       # 3️⃣ Login to Azure
       - name: Azure Login
@@ -33,12 +33,14 @@ jobs:
 
       # 5️⃣ Terraform Plan
       - name: Terraform Plan
+        id: plan
         run: |
           terraform -chdir=env/production plan -out=tfplan \
             -var "admin_username=azureuser" \
             -var "location=UK South" \
             -var "name_prefix=azure-test"
 
-      # 6️⃣ Terraform Apply
+      # 6️⃣ Terraform Apply 
       - name: Terraform Apply
+        if: success()
         run: terraform -chdir=env/production apply -auto-approve tfplan
