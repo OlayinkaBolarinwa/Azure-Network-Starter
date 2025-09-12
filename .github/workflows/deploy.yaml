@@ -9,19 +9,11 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
-    env:
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ADMIN_USERNAME: ${{ secrets.AZURE_ADMIN_USERNAME }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
@@ -31,7 +23,7 @@ jobs:
         working-directory: ./env/production
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -var "admin_username=${{ env.ADMIN_USERNAME }}"
+        run: terraform plan -out=tfplan -var "admin_username=${{ secrets.ADMIN_USERNAME }}" -var "location=${{ secrets.AZURE_LOCATION }}"
         working-directory: ./env/production
 
       - name: Terraform Apply
