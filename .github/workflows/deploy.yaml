@@ -4,30 +4,40 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   terraform:
+    name: Terraform
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
+    steps:
+      # 1️⃣ Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.1
-          terraform_wrapper: false
+          terraform_version: 1.6.0   # adjust if needed
 
+      # 3️⃣ Azure login using Service Principal
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # 4️⃣ Terraform Init (using correct folder)
       - name: Terraform Init
-        run: terraform init
+        run: terraform -chdir=env/production init
 
+      # 5️⃣ Terraform Plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -var "admin_username=azureuser" -var "location=UK South"
+        run: terraform -chdir=env/production plan -out=tfplan \
+          -var "admin_username=azureuser" \
+          -var "location=UK South"
 
+      # 6️⃣ Terraform Apply
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform -chdir=env/production apply -auto-approve tfplan
