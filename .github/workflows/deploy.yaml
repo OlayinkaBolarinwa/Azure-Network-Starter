@@ -1,71 +1,44 @@
-name: Terraform PROD Deployment
+name: Terraform Deploy
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      # 1. Checkout your repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set Environment Variables
-        run: |
-          echo "TF_VAR_rg_name=${{ secrets.AZURE_RG_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_location=${{ secrets.AZURE_LOCATION }}" >> $GITHUB_ENV
-          echo "TF_VAR_vnet_name=${{ secrets.AZURE_VNET_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_subnet_name=${{ secrets.AZURE_SUBNET_NAME }}" >> $GITHUB_ENV
-          echo "PING_TARGET=${{ secrets.PING_TARGET }}" >> $GITHUB_ENV
-
+      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.13.1
 
+      # 3. Login to Azure
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # 4. Terraform Init
       - name: Terraform Init
-        working-directory: ./env/production
         run: terraform init
 
-      - name: Terraform Import RG
-        working-directory: ./env/production
+      # 5. Import existing Resource Group (ignore errors if already imported)
+      - name: Terraform Import Resource Group
         run: |
-          terraform import azurerm_resource_group.rg_securenetwork /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ secrets.AZURE_RG_NAME }} || true
+          terraform import azurerm_resource_group.rg_securenetwork /subscriptions/ec248675-1d06-41c0-a954-557ab9cf7127/resourceGroups/Secure-Network || true
 
+      # 6. Terraform Plan
       - name: Terraform Plan
-        working-directory: ./env/production
         run: terraform plan
 
-      - name: Manual Approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.token }}
-          approvers: your-github-username
-          minimum-approvals: 1
-          issue-title: "Approve Production Terraform Apply"
-          issue-body: "Review the Terraform plan before approving deployment to Production."
-
+      # 7. Terraform Apply
       - name: Terraform Apply
-        working-directory: ./env/production
         run: terraform apply -auto-approve
-
-      - name: Notify Slack
-        if: always()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
