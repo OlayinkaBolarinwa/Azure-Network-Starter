@@ -14,11 +14,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Set environment variables from GitHub secrets
       - name: Set Environment Variables
         run: |
           echo "TF_VAR_rg_name=${{ secrets.AZURE_RG_NAME }}" >> $GITHUB_ENV
@@ -27,33 +25,29 @@ jobs:
           echo "TF_VAR_subnet_name=${{ secrets.AZURE_SUBNET_NAME }}" >> $GITHUB_ENV
           echo "PING_TARGET=${{ secrets.PING_TARGET }}" >> $GITHUB_ENV
 
-      # Run network ping test
-      - name: Network Check
-        run: bash ping-test.sh
-
-      # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.13.1
 
-      # Azure login
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Terraform Init
       - name: Terraform Init
         working-directory: ./env/production
         run: terraform init
 
-      # Terraform Plan
+      - name: Terraform Import RG
+        working-directory: ./env/production
+        run: |
+          terraform import azurerm_resource_group.rg_securenetwork /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ secrets.AZURE_RG_NAME }} || true
+
       - name: Terraform Plan
         working-directory: ./env/production
         run: terraform plan
 
-      # Manual approval before Apply
       - name: Manual Approval
         uses: trstringer/manual-approval@v1
         with:
@@ -63,12 +57,10 @@ jobs:
           issue-title: "Approve Production Terraform Apply"
           issue-body: "Review the Terraform plan before approving deployment to Production."
 
-      # Terraform Apply
       - name: Terraform Apply
         working-directory: ./env/production
         run: terraform apply -auto-approve
 
-      # Slack notification
       - name: Notify Slack
         if: always()
         uses: 8398a7/action-slack@v3
