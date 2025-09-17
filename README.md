@@ -29,18 +29,25 @@ This project is designed for learning and demonstration. It shows how to:
 
 Add your secrets in secrets.auto.tfvars (do not commit this file):
 
-terraform init
-terraform plan
-terraform apply -auto-approve
+client_id       = "<your-client-id>"
+client_secret   = "<your-client-secret>"
+tenant_id       = "<your-tenant-id>"
+subscription_id = "<your-subscription-id>"
+
 
 Initialize Terraform
+
 terraform init
 
+
 Plan and apply
+
 terraform plan
 terraform apply
 
+
 SSH into the VM using the public IP
+
 ssh -i ~/.ssh/id_rsa azureuser@<public-ip>
 
 Notes
